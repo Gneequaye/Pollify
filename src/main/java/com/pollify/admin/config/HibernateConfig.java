@@ -35,7 +35,7 @@ public class HibernateConfig {
     public LocalContainerEntityManagerFactoryBean entityManagerFactory(DataSource dataSource) {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setDataSource(dataSource);
-        em.setPackagesToScan("com.pollify.pollify.entity");
+        em.setPackagesToScan("com.pollify.admin.entity.master", "com.pollify.admin.entity.tenant");
         em.setPersistenceUnitName("pollify-persistence-unit");
         
         HibernateJpaVendorAdapter vendorAdapter = new HibernateJpaVendorAdapter();
