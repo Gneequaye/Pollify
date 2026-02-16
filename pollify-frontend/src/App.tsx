@@ -7,13 +7,13 @@ function App() {
   return (
     <ThemeProvider defaultTheme="system" storageKey="ui-theme">
       <Routes>
-        {/* Auth Routes */}
-        <Route path="/auth/login" element={<LoginPage />} />
-        <Route path="/auth/register" element={<RegisterPage />} />
-        <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
+        {/* Auth Routes - Using /login, /register, /reset instead of /auth/* to avoid API conflicts */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
         
         {/* Dashboard Routes */}
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/" element={<LoginPage />} />
         <Route path="/dashboard" element={<DashboardPage />} />
       </Routes>
     </ThemeProvider>
