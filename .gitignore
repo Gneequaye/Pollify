@@ -35,3 +35,15 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Frontend Build Artifacts ###
+# Vite build outputs
+src/main/resources/static/assets/
+src/main/resources/static/index.html
+src/main/resources/static/vite.svg
+
+# Node.js
+pollify-frontend/dist/
+pollify-frontend/node_modules/
+.gradle/nodejs/
+.gradle/npm/
