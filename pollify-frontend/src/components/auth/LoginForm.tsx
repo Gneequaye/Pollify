@@ -62,7 +62,7 @@ export function LoginForm() {
         <div className="flex items-center justify-between">
           <Label htmlFor="password">Password</Label>
           <Link 
-            to="/auth/reset-password" 
+            to="/reset-password" 
             className="text-sm text-primary hover:underline"
           >
             Forgot password?
@@ -101,7 +101,7 @@ export function LoginForm() {
 
       <div className="text-center text-sm text-muted-foreground">
         Don't have an account?{' '}
-        <Link to="/auth/register" className="text-primary font-medium hover:underline">
+        <Link to="/register" className="text-primary font-medium hover:underline">
           Register now
         </Link>
       </div>

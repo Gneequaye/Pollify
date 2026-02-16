@@ -314,7 +314,7 @@ export function RegisterForm() {
 
       <div className="text-center text-sm text-muted-foreground">
         Already have an account?{' '}
-        <Link to="/auth/login" className="text-primary font-medium hover:underline">
+        <Link to="/login" className="text-primary font-medium hover:underline">
           Sign in
         </Link>
       </div>
