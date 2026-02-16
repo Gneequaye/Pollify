@@ -41,12 +41,34 @@ public class SecurityConfig {
                 .requestMatchers("/api/public/**").permitAll()
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/ws/**").permitAll()
-                // Protected endpoints
+                .requestMatchers("/api/health").permitAll()
+                
+                // Static resources for SPA (CSS, JS, images, fonts, etc.)
+                .requestMatchers(
+                    "/",
+                    "/index.html",
+                    "/assets/**",
+                    "/favicon.ico",
+                    "/*.css",
+                    "/*.js",
+                    "/*.png",
+                    "/*.jpg",
+                    "/*.svg",
+                    "/*.ico",
+                    "/*.woff",
+                    "/*.woff2",
+                    "/*.ttf",
+                    "/*.eot"
+                ).permitAll()
+                
+                // Protected API endpoints
                 .requestMatchers("/api/super-admin/**").authenticated()
                 .requestMatchers("/api/admin/**").authenticated()
                 .requestMatchers("/api/voter/**").authenticated()
-                // All other requests require authentication
-                .anyRequest().authenticated()
+                .requestMatchers("/api/**").authenticated()
+                
+                // All other requests (SPA routes) - permit all so React Router can handle them
+                .anyRequest().permitAll()
             )
             // Add filters in correct order
             .addFilterBefore(tenantResolutionFilter, UsernamePasswordAuthenticationFilter.class)
