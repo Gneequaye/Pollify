@@ -1,7 +1,10 @@
 import { Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from '@/components/theme-provider'
-import DashboardPage from '@/pages/DashboardPage'
 import { LoginPage, RegisterPage, ResetPasswordPage } from '@/pages/auth'
+import { AdminDashboard } from '@/pages/admin'
+import { TenantDashboard } from '@/pages/tenant'
+import { VoterDashboard } from '@/pages/voter'
+import { Toaster } from '@/components/ui/sonner'
 
 function App() {
   return (
@@ -12,10 +15,13 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         
-        {/* Dashboard Routes */}
+        {/* Dashboard Routes - Three separate dashboards based on role */}
         <Route path="/" element={<LoginPage />} />
-        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/dashboard/admin/*" element={<AdminDashboard />} />
+        <Route path="/dashboard/tenant/*" element={<TenantDashboard />} />
+        <Route path="/dashboard/voter/*" element={<VoterDashboard />} />
       </Routes>
+      <Toaster />
     </ThemeProvider>
   )
 }
