@@ -98,7 +98,7 @@ export function Profile() {
         <div className="flex flex-col sm:flex-row sm:items-center gap-5">
           {/* Avatar */}
           <div className="relative shrink-0">
-            <div className="size-20 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-2xl font-bold select-none">
+            <div className="size-20 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-2xl font-bold select-none">
               {initials}
             </div>
             <button className="absolute -bottom-1 -right-1 size-7 rounded-full bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center shadow-sm hover:bg-zinc-50 dark:hover:bg-zinc-700 transition-colors">
@@ -112,7 +112,7 @@ export function Profile() {
               <h1 className="text-xl font-bold">
                 {user ? `${user.firstName} ${user.lastName}` : 'Super Admin'}
               </h1>
-              <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300 border-0 gap-1 text-xs">
+              <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-0 gap-1 text-xs">
                 <IconShieldCheck className="size-3" /> Super Admin
               </Badge>
               <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-0 gap-1 text-xs">
