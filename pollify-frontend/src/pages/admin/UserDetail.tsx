@@ -84,14 +84,14 @@ export function UserDetail() {
       {/* Profile Hero */}
       <div className={`${panel} p-6`}>
         <div className="flex flex-col sm:flex-row sm:items-center gap-5">
-          <div className="size-16 rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-xl font-bold shrink-0">
+          <div className="size-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xl font-bold shrink-0">
             {initials}
           </div>
           <div className="flex-1">
             <div className="flex flex-wrap items-center gap-2 mb-1">
               <h1 className="text-xl font-bold">{user.name}</h1>
               {user.role === 'SUPER_ADMIN' ? (
-                <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300 border-0 gap-1 text-xs">
+                <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-0 gap-1 text-xs">
                   <IconShieldCheck className="size-3" /> Super Admin
                 </Badge>
               ) : (
@@ -184,7 +184,7 @@ export function UserDetail() {
           {[
             { icon: IconCircleCheckFilled, color: 'text-emerald-500', label: 'Last Login', date: user.lastLogin, desc: 'Successful login to the platform' },
             { icon: IconCalendar, color: 'text-blue-500', label: 'Account Created', date: user.createdAt, desc: 'User account was created by a super admin' },
-            { icon: IconMail, color: 'text-violet-500', label: 'Email Verified', date: user.createdAt, desc: user.emailVerified ? 'Email address verified successfully' : 'Email not yet verified' },
+            { icon: IconMail, color: 'text-blue-500', label: 'Email Verified', date: user.createdAt, desc: user.emailVerified ? 'Email address verified successfully' : 'Email not yet verified' },
           ].map((item, i) => (
             <div key={i} className="flex items-start gap-4">
               <div className={`mt-0.5 ${item.color}`}>
