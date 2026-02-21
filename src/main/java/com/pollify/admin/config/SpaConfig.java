@@ -42,15 +42,19 @@ public class SpaConfig implements WebMvcConfigurer {
                         return requestedResource;
                     }
                     
-                    // Smart routing logic
+                    // Smart routing logic for SPA
+                    // Return index.html for all non-API, non-WebSocket, non-static routes
                     if (!resourcePath.startsWith("api/") &&           // Not an API call
                         !resourcePath.startsWith("ws/") &&            // Not a WebSocket call
                         !isStaticResource(resourcePath)) {            // Not a static file
                         // Fallback to index.html for SPA client-side routing
-                        return new ClassPathResource("/static/index.html");
+                        Resource indexHtml = new ClassPathResource("/static/index.html");
+                        if (indexHtml.exists()) {
+                            return indexHtml;
+                        }
                     }
                     
-                    return null;
+                    return requestedResource.exists() ? requestedResource : null;
                 }
             });
     }
