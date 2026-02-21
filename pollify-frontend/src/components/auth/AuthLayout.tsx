@@ -13,36 +13,21 @@ export function AuthLayout({ children, title, subtitle, imageType = 'login' }: A
     switch (imageType) {
       case 'login':
         return {
-          title: 'Welcome Back to Pollify',
-          description: 'Secure, transparent, and accessible voting for your institution',
-          features: [
-            '🗳️ Real-time voting results',
-            '🔒 Bank-level security',
-            '📊 Complete transparency',
-            '⚡ Instant notifications'
-          ]
+          title: 'Admin Dashboard Access',
+          description: 'Manage your school\'s elections, create polls, and oversee the democratic process with powerful admin tools.',
+          image: 'https://images.unsplash.com/photo-1540910419892-4a36d2c3266c?w=800&q=80' // Voting/ballot box
         };
       case 'register':
         return {
-          title: 'Join Your School Community',
-          description: 'Be part of the democratic process at your institution',
-          features: [
-            '✅ Verify your identity',
-            '🎯 Cast your vote securely',
-            '📈 Track election results',
-            '🔔 Stay updated in real-time'
-          ]
+          title: 'Empower Your School Democracy',
+          description: 'Create and manage secure elections for your school. Set up voting events, manage candidates, and ensure fair democratic processes.',
+          image: 'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&q=80' // Students/community
         };
       case 'reset':
         return {
-          title: 'Secure Account Recovery',
-          description: 'We\'ll help you get back to voting in no time',
-          features: [
-            '🔐 Secure password reset',
-            '✉️ Email verification',
-            '⚡ Quick recovery process',
-            '🛡️ Account protection'
-          ]
+          title: 'Account Recovery',
+          description: 'Regain access to your account quickly and securely.',
+          image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&q=80' // Security/lock
         };
     }
   };
@@ -56,11 +41,18 @@ export function AuthLayout({ children, title, subtitle, imageType = 'login' }: A
         <div className="w-full max-w-md">
           {/* Logo */}
           <div className="mb-8">
-            <Link to="/" className="inline-flex items-center gap-2">
-              <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-xl">P</span>
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <Link to="/" className="inline-flex items-center gap-3">
+              {/* Voting Ballot Icon */}
+              <svg 
+                className="w-10 h-10 text-foreground" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" strokeWidth="2"/>
+                <path d="M8 12L11 15L16 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              <span className="text-2xl font-bold text-foreground">
                 Pollify
               </span>
             </Link>
@@ -78,65 +70,29 @@ export function AuthLayout({ children, title, subtitle, imageType = 'login' }: A
       </div>
 
       {/* Right Side - Image/Illustration */}
-      <div className="hidden lg:flex lg:flex-1 bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-700 relative overflow-hidden">
-        {/* Background Pattern */}
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute inset-0" style={{
-            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`
-          }} />
+      <div className="hidden lg:flex lg:flex-1 relative overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0">
+          <img 
+            src={imageContent.image}
+            alt="Voting"
+            className="w-full h-full object-cover"
+          />
         </div>
-
+        
+        {/* Gradient Overlay */}
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/80 via-purple-600/70 to-indigo-700/80"></div>
+        
         {/* Content */}
         <div className="relative z-10 flex flex-col items-center justify-center p-12 text-white">
-          {/* Voting Illustration */}
-          <div className="mb-8">
-            <svg
-              className="w-64 h-64"
-              viewBox="0 0 200 200"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {/* Ballot Box */}
-              <rect x="40" y="100" width="120" height="80" rx="8" fill="white" fillOpacity="0.9" />
-              <rect x="40" y="100" width="120" height="20" rx="8" fill="white" fillOpacity="1" />
-              
-              {/* Slot */}
-              <rect x="85" y="85" width="30" height="4" rx="2" fill="white" fillOpacity="0.9" />
-              
-              {/* Ballot Paper */}
-              <g transform="translate(70, 20)">
-                <rect x="0" y="0" width="60" height="80" rx="4" fill="white" fillOpacity="0.95" />
-                <line x1="10" y1="15" x2="50" y2="15" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" />
-                <line x1="10" y1="25" x2="50" y2="25" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" />
-                <line x1="10" y1="35" x2="40" y2="35" stroke="#3B82F6" strokeWidth="2" strokeLinecap="round" />
-                <circle cx="15" cy="50" r="6" fill="#10B981" />
-                <path d="M12 50 L14 52 L18 48" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-              </g>
-              
-              {/* Checkmark Badge */}
-              <circle cx="140" cy="70" r="20" fill="#10B981" />
-              <path d="M130 70 L136 76 L150 62" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" fill="none" />
-            </svg>
-          </div>
-
-          {/* Text Content */}
           <div className="text-center max-w-md">
-            <h2 className="text-3xl font-bold mb-4">{imageContent.title}</h2>
-            <p className="text-lg mb-8 text-blue-100">{imageContent.description}</p>
-
-            {/* Features */}
-            <div className="space-y-3 text-left">
-              {imageContent.features.map((feature, index) => (
-                <div key={index} className="flex items-center gap-3 text-white/90">
-                  <span className="text-xl">{feature}</span>
-                </div>
-              ))}
-            </div>
+            <h2 className="text-4xl font-bold mb-6 drop-shadow-lg">
+              {imageContent.title}
+            </h2>
+            <p className="text-xl text-white/90 leading-relaxed drop-shadow-md">
+              {imageContent.description}
+            </p>
           </div>
-
-          {/* Decorative Elements */}
-          <div className="absolute top-10 right-10 w-20 h-20 bg-white/10 rounded-full blur-xl" />
-          <div className="absolute bottom-10 left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
         </div>
       </div>
     </div>

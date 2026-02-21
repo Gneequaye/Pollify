@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Eye, EyeOff, Loader2 } from 'lucide-react';
+import { authService } from '@/services/authService';
+import { setAuthToken, setCurrentUser, getDashboardRoute } from '@/lib/auth';
 
 export function LoginForm() {
+  const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -22,16 +25,23 @@ export function LoginForm() {
     setLoading(true);
 
     try {
-      // TODO: Implement actual login API call
-      console.log('Login attempt:', formData);
+      // Attempt login (will try super admin first, then tenant admin)
+      const response = await authService.login(formData.email, formData.password);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Store authentication data in sessionStorage
+      setAuthToken(response.token);
+      setCurrentUser(response);
       
-      // Handle successful login
-      // navigate('/dashboard');
-    } catch (err) {
-      setError('Invalid email or password. Please try again.');
+      console.log('Login successful:', response);
+      console.log('User role:', response.role);
+      
+      // Route user to correct dashboard based on role
+      const dashboardRoute = getDashboardRoute(response.role);
+      console.log('Redirecting to:', dashboardRoute);
+      navigate(dashboardRoute);
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError(err.message || 'Invalid email or password. Please try again.');
     } finally {
       setLoading(false);
     }
