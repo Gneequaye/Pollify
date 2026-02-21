@@ -3,10 +3,11 @@ package com.pollify.admin.service;
 import com.pollify.admin.dto.LoginRequest;
 import com.pollify.admin.dto.LoginResponse;
 import com.pollify.admin.entity.master.PollifyTenant;
-import com.pollify.admin.entity.master.SuperAdmin;
+import com.pollify.admin.entity.master.User;
+import com.pollify.admin.entity.master.UserRole;
 import com.pollify.admin.multitenancy.TenantContext;
 import com.pollify.admin.repository.master.PollifyTenantRepository;
-import com.pollify.admin.repository.master.SuperAdminRepository;
+import com.pollify.admin.repository.master.UserRepository;
 import com.pollify.admin.security.JwtTokenProvider;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -26,17 +27,17 @@ public class AuthenticationService {
     private final JwtTokenProvider jwtTokenProvider;
     private final PasswordEncoder passwordEncoder;
     private final PollifyTenantRepository tenantRepository;
-    private final SuperAdminRepository superAdminRepository;
+    private final UserRepository userRepository;
 
     public AuthenticationService(
             JwtTokenProvider jwtTokenProvider,
             PasswordEncoder passwordEncoder,
             PollifyTenantRepository tenantRepository,
-            SuperAdminRepository superAdminRepository) {
+            UserRepository userRepository) {
         this.jwtTokenProvider = jwtTokenProvider;
         this.passwordEncoder = passwordEncoder;
         this.tenantRepository = tenantRepository;
-        this.superAdminRepository = superAdminRepository;
+        this.userRepository = userRepository;
     }
 
     /**
@@ -50,15 +51,25 @@ public class AuthenticationService {
             // Set master context
             TenantContext.setTenantId(null);
             
-            // Find tenant by admin email
-            PollifyTenant tenant = tenantRepository.findByAdminEmail(request.getEmail())
+            // Find user with TENANT_ADMIN role
+            User user = userRepository.findByEmailAndRole(request.getEmail(), UserRole.TENANT_ADMIN)
                     .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
             // Validate password
-            if (!passwordEncoder.matches(request.getPassword(), tenant.getAdminPasswordHash())) {
+            if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
                 log.warn("Invalid password for tenant admin: {}", request.getEmail());
                 throw new BadCredentialsException("Invalid credentials");
             }
+
+            // Check if user is active
+            if (!user.getIsActive()) {
+                log.warn("User {} is not active", user.getEmail());
+                throw new BadCredentialsException("User account is not active");
+            }
+
+            // Get tenant information
+            PollifyTenant tenant = tenantRepository.findById(user.getTenantId())
+                    .orElseThrow(() -> new BadCredentialsException("Tenant not found"));
 
             // Check tenant status
             if (tenant.getTenantStatus() != PollifyTenant.TenantStatus.ACTIVE) {
@@ -68,22 +79,22 @@ public class AuthenticationService {
 
             // Generate JWT token
             String token = jwtTokenProvider.generateToken(
-                    tenant.getTenantUuid().toString(),
-                    tenant.getAdminEmail(),
-                    "TENANT_ADMIN",
-                    tenant.getDatabaseSchema()
+                    user.getId().toString(),
+                    user.getEmail(),
+                    tenant.getTenantId(),
+                    UserRole.TENANT_ADMIN.name()
             );
 
-            log.info("Tenant admin login successful: {}", tenant.getAdminEmail());
+            log.info("Tenant admin login successful: {}", user.getEmail());
 
             return new LoginResponse(
                     token,
-                    tenant.getTenantUuid().toString(),
-                    tenant.getAdminEmail(),
-                    "Admin",
-                    tenant.getUniversityName(),
-                    "TENANT_ADMIN",
-                    tenant.getDatabaseSchema(),
+                    user.getId().toString(),
+                    user.getEmail(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    UserRole.TENANT_ADMIN.name(),
+                    tenant.getTenantId(),
                     tenant.getUniversityName()
             );
         } finally {
@@ -102,33 +113,39 @@ public class AuthenticationService {
             // Set master context
             TenantContext.setTenantId(null);
             
-            // Find super admin
-            SuperAdmin admin = superAdminRepository.findByEmail(request.getEmail())
+            // Find user with SUPER_ADMIN role
+            User user = userRepository.findByEmailAndRole(request.getEmail(), UserRole.SUPER_ADMIN)
                     .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
             // Validate password
-            if (!passwordEncoder.matches(request.getPassword(), admin.getPasswordHash())) {
+            if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
                 log.warn("Invalid password for super admin: {}", request.getEmail());
                 throw new BadCredentialsException("Invalid credentials");
             }
 
+            // Check if user is active
+            if (!user.getIsActive()) {
+                log.warn("User {} is not active", user.getEmail());
+                throw new BadCredentialsException("User account is not active");
+            }
+
             // Generate JWT token with null tenant (master context)
             String token = jwtTokenProvider.generateToken(
-                    admin.getId().toString(),
-                    admin.getEmail(),
-                    "SUPER_ADMIN",
-                    null
+                    user.getId().toString(),
+                    user.getEmail(),
+                    null,
+                    UserRole.SUPER_ADMIN.name()
             );
 
-            log.info("Super admin login successful: {}", admin.getEmail());
+            log.info("Super admin login successful: {}", user.getEmail());
 
             return new LoginResponse(
                     token,
-                    admin.getId().toString(),
-                    admin.getEmail(),
-                    admin.getFirstName(),
-                    admin.getLastName(),
-                    "SUPER_ADMIN",
+                    user.getId().toString(),
+                    user.getEmail(),
+                    user.getFirstName(),
+                    user.getLastName(),
+                    UserRole.SUPER_ADMIN.name(),
                     null,
                     "Pollify Platform"
             );
