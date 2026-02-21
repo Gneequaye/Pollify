@@ -1,1 +1,11 @@
 export { TenantDashboard } from './TenantDashboard';
+export { TenantOverview } from './TenantOverview';
+export { Elections } from './Elections';
+export { CreateElection } from './CreateElection';
+export { ElectionDetail } from './ElectionDetail';
+export { Voters } from './Voters';
+export { RegisterVoter } from './RegisterVoter';
+export { Results } from './Results';
+export { TenantSettings } from './TenantSettings';
+export { TenantProfile } from './TenantProfile';
+export { TenantNotifications } from './TenantNotifications';
