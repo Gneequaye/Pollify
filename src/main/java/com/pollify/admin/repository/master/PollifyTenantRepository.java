@@ -1,6 +1,7 @@
 package com.pollify.admin.repository.master;
 
 import com.pollify.admin.entity.master.PollifyTenant;
+import com.pollify.admin.entity.master.PollifyTenant.TenantStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -27,4 +28,7 @@ public interface PollifyTenantRepository extends JpaRepository<PollifyTenant, St
     boolean existsByUniversityEmail(String universityEmail);
     
     boolean existsBySchoolCode(String schoolCode);
+    
+    // Count methods for statistics
+    long countByTenantStatus(TenantStatus status);
 }
