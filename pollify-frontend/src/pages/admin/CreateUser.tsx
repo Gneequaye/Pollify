@@ -350,17 +350,17 @@ export function CreateUser() {
                             onClick={() => field.onChange('SUPER_ADMIN')}
                             className={`relative text-left rounded-xl border-2 p-5 transition-all focus:outline-none ${
                               field.value === 'SUPER_ADMIN'
-                                ? 'border-violet-500 bg-violet-50 dark:bg-violet-950/20'
+                                ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20'
                                 : 'border-zinc-200 dark:border-zinc-700 hover:border-zinc-300 dark:hover:border-zinc-600 bg-zinc-50/50 dark:bg-zinc-800/30'
                             }`}
                           >
                             {field.value === 'SUPER_ADMIN' && (
                               <span className="absolute top-3 right-3">
-                                <IconCircleCheckFilled className="size-5 text-violet-500" />
+                                <IconCircleCheckFilled className="size-5 text-blue-500" />
                               </span>
                             )}
-                            <div className="size-10 rounded-xl bg-violet-100 dark:bg-violet-950/40 flex items-center justify-center mb-3">
-                              <IconShieldCheck className="size-5 text-violet-600 dark:text-violet-400" />
+                            <div className="size-10 rounded-xl bg-blue-100 dark:bg-blue-950/40 flex items-center justify-center mb-3">
+                              <IconShieldCheck className="size-5 text-blue-600 dark:text-blue-400" />
                             </div>
                             <h3 className="text-sm font-semibold mb-1">Super Admin</h3>
                             <p className="text-xs text-muted-foreground">Full platform access. Can manage tenants, send invitations, create users, and access all system settings.</p>
@@ -427,7 +427,7 @@ export function CreateUser() {
                       <div className="flex items-center gap-3">
                         <span title="Super Admin">
                           {perm.superAdmin
-                            ? <IconCircleCheckFilled className="size-3.5 text-violet-500" />
+                            ? <IconCircleCheckFilled className="size-3.5 text-blue-500" />
                             : <span className="size-3.5 text-zinc-300 dark:text-zinc-600">—</span>}
                         </span>
                         <span title="Tenant Admin">
@@ -441,7 +441,7 @@ export function CreateUser() {
                 </div>
                 <Separator className="my-3 bg-zinc-200 dark:bg-zinc-700" />
                 <div className="flex items-center justify-end gap-4 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1"><IconShieldCheck className="size-3 text-violet-500" /> Super</span>
+                  <span className="flex items-center gap-1"><IconShieldCheck className="size-3 text-blue-500" /> Super</span>
                   <span className="flex items-center gap-1"><IconUserCheck className="size-3 text-blue-500" /> Tenant</span>
                 </div>
               </div>
