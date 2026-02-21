@@ -60,7 +60,7 @@ export function SystemUsers() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           { label: 'Total Users', value: totalUsers, icon: IconUsers, trend: '+2 this month', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/40' },
-          { label: 'Super Admins', value: superAdmins, icon: IconShieldCheck, trend: 'Platform admins', color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-950/40' },
+          { label: 'Super Admins', value: superAdmins, icon: IconShieldCheck, trend: 'Platform admins', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/40' },
           { label: 'Tenant Admins', value: tenantAdmins, icon: IconUserCheck, trend: 'School admins', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-50 dark:bg-emerald-950/40' },
           { label: 'Active Users', value: activeUsers, icon: IconCircleCheckFilled, trend: `${totalUsers - activeUsers} inactive`, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/40' },
         ].map(stat => (
@@ -141,7 +141,7 @@ export function SystemUsers() {
                     {/* User */}
                     <TableCell className="pl-5 py-3.5">
                       <div className="flex items-center gap-3">
-                        <div className="size-8 rounded-full bg-gradient-to-br from-violet-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                        <div className="size-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white text-xs font-bold shrink-0">
                           {user.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
                         </div>
                         <div>
@@ -159,7 +159,7 @@ export function SystemUsers() {
                     {/* Role */}
                     <TableCell>
                       {user.role === 'SUPER_ADMIN' ? (
-                        <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300 border-0 gap-1 text-xs">
+                        <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-0 gap-1 text-xs">
                           <IconShieldCheck className="size-3" /> Super Admin
                         </Badge>
                       ) : (
