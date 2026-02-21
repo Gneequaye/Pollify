@@ -26,6 +26,8 @@ spring:
             non_contextual_creation: true
         hbm2ddl:
           auto: none
+        implicit_naming_strategy: org.springframework.boot.orm.jpa.hibernate.SpringImplicitNamingStrategy
+        physical_naming_strategy: org.springframework.boot.orm.jpa.hibernate.SpringPhysicalNamingStrategy
   
   flyway:
     enabled: true
@@ -40,6 +42,12 @@ spring:
 pollify:
   tenant:
     auto-sync-migrations: true
+  super-admin:
+    auto-create: ${SUPER_ADMIN_AUTO_CREATE:true}
+    email: ${SUPER_ADMIN_EMAIL:superadmin@pollify.com}
+    password: ${SUPER_ADMIN_PASSWORD:Admin@123}
+    first-name: ${SUPER_ADMIN_FIRST_NAME:Super}
+    last-name: ${SUPER_ADMIN_LAST_NAME:Admin}
 
 jwt:
   secret: ${JWT_SECRET:pollify-secret-key-minimum-256-bits-for-hs256-algorithm-security-requirement}

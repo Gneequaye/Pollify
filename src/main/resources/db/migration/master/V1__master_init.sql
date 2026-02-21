@@ -22,6 +22,34 @@ CREATE TABLE master.pollify_tenant (
     onboarded_at         TIMESTAMP WITH TIME ZONE
 );
 
+-- Users Table (Super Admins and Tenant Admins) - Created BEFORE tenant_invitation
+CREATE TABLE master.users (
+    id                UUID PRIMARY KEY,
+    email             VARCHAR(255) NOT NULL UNIQUE,
+    password_hash     TEXT NOT NULL,
+    first_name        VARCHAR(100) NOT NULL,
+    last_name         VARCHAR(100) NOT NULL,
+    role              VARCHAR(50) NOT NULL CHECK (role IN ('SUPER_ADMIN', 'TENANT_ADMIN')),
+    tenant_id         VARCHAR(12) REFERENCES master.pollify_tenant(tenant_id) ON DELETE CASCADE,
+    is_active         BOOLEAN DEFAULT TRUE NOT NULL,
+    email_verified    BOOLEAN DEFAULT FALSE NOT NULL,
+    created_at        TIMESTAMP WITH TIME ZONE NOT NULL,
+    updated_at        TIMESTAMP WITH TIME ZONE NOT NULL
+);
+
+-- Indexes for users table
+CREATE INDEX idx_users_email ON master.users(email);
+CREATE INDEX idx_users_role ON master.users(role);
+CREATE INDEX idx_users_tenant_id ON master.users(tenant_id);
+
+-- Constraint: Super admins cannot have a tenant_id
+ALTER TABLE master.users ADD CONSTRAINT check_super_admin_no_tenant 
+    CHECK (role != 'SUPER_ADMIN' OR tenant_id IS NULL);
+
+-- Constraint: Tenant admins must have a tenant_id
+ALTER TABLE master.users ADD CONSTRAINT check_tenant_admin_has_tenant 
+    CHECK (role != 'TENANT_ADMIN' OR tenant_id IS NOT NULL);
+
 -- Tenant Invitation Table (Epic 1 - Story 1)
 CREATE TABLE master.tenant_invitation (
     id                 UUID PRIMARY KEY,
@@ -32,7 +60,7 @@ CREATE TABLE master.tenant_invitation (
     email_domain       VARCHAR(255),          -- For DOMAIN_SCHOOL
     school_code        VARCHAR(20),           -- For CODE_SCHOOL
     invitation_status  VARCHAR(50) NOT NULL,  -- PENDING, ACCEPTED, EXPIRED, REVOKED
-    invited_by         UUID NOT NULL,         -- Super Admin ID
+    invited_by         UUID NOT NULL REFERENCES master.users(id),  -- User ID (must be SUPER_ADMIN role)
     expires_at         TIMESTAMP WITH TIME ZONE NOT NULL,
     accepted_at        TIMESTAMP WITH TIME ZONE,
     created_at         TIMESTAMP WITH TIME ZONE NOT NULL
@@ -51,16 +79,6 @@ CREATE TABLE master.email_domain_index (
 );
 
 CREATE INDEX idx_email_domain ON master.email_domain_index(email_domain);
-
--- Super Admin Table
-CREATE TABLE master.super_admin (
-    id            UUID PRIMARY KEY,
-    email         VARCHAR(255) NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    first_name    VARCHAR(100) NOT NULL,
-    last_name     VARCHAR(100) NOT NULL,
-    created_at    TIMESTAMP WITH TIME ZONE NOT NULL
-);
 
 -- Refresh Token Table
 CREATE TABLE master.refresh_token (

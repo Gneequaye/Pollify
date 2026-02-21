@@ -11,5 +11,5 @@ CREATE DATABASE pollify_db;
 \q
 EOF
 
-echo "✅ Database reset complete!"
-echo "🚀 Now run: ./gradlew bootRun"
+echo " Database reset complete!"
+echo " Now run: ./gradlew bootRun"
