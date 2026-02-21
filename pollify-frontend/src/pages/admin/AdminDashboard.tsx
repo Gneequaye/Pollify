@@ -9,6 +9,8 @@ import { SystemUsers } from './SystemUsers';
 import { UserDetail } from './UserDetail';
 import { CreateUser } from './CreateUser';
 import { Settings } from './Settings';
+import { Profile } from './Profile';
+import { Notifications } from './Notifications';
 import { AdminSidebar } from '@/components/admin-sidebar';
 import { SiteHeader } from '@/components/site-header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
@@ -51,6 +53,8 @@ export function AdminDashboard() {
                 <Route path="users/create" element={<CreateUser />} />
                 <Route path="users/:userId" element={<UserDetail />} />
                 <Route path="settings" element={<Settings />} />
+                <Route path="profile" element={<Profile />} />
+                <Route path="notifications" element={<Notifications />} />
               </Routes>
             </div>
           </div>

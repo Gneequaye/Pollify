@@ -9,3 +9,5 @@ export { SystemUsers } from './SystemUsers';
 export { UserDetail } from './UserDetail';
 export { CreateUser } from './CreateUser';
 export { Settings } from './Settings';
+export { Profile } from './Profile';
+export { Notifications } from './Notifications';
