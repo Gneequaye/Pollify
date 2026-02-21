@@ -30,12 +30,14 @@ import { logout } from '@/lib/auth'
 
 export function NavUser({
   user,
+  basePath = '/dashboard/admin',
 }: {
   user: {
     name: string
     email: string
     avatar: string
   }
+  basePath?: string
 }) {
   const { isMobile } = useSidebar()
   const navigate = useNavigate()
@@ -101,15 +103,15 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem onClick={() => navigate('/dashboard/admin/profile')}>
+              <DropdownMenuItem onClick={() => navigate(`${basePath}/profile`)}>
                 <IconUserCircle className="size-4" />
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/dashboard/admin/notifications')}>
+              <DropdownMenuItem onClick={() => navigate(`${basePath}/notifications`)}>
                 <IconBell className="size-4" />
                 Notifications
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/dashboard/admin/settings')}>
+              <DropdownMenuItem onClick={() => navigate(`${basePath}/settings`)}>
                 <IconSettings className="size-4" />
                 Settings
               </DropdownMenuItem>
