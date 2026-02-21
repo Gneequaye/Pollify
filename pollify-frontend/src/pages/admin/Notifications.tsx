@@ -41,7 +41,7 @@ const MOCK_NOTIFICATIONS: Notification[] = [
 
 const TYPE_CONFIG: Record<NotificationType, { icon: typeof IconBell; color: string; bg: string; label: string }> = {
   tenant:     { icon: IconBuilding,      color: 'text-blue-600 dark:text-blue-400',    bg: 'bg-blue-100 dark:bg-blue-950/40',    label: 'Tenant' },
-  invitation: { icon: IconMail,          color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-100 dark:bg-violet-950/40', label: 'Invitation' },
+  invitation: { icon: IconMail,          color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-950/40', label: 'Invitation' },
   user:       { icon: IconUsers,         color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-950/40', label: 'User' },
   system:     { icon: IconInfoCircle,    color: 'text-zinc-600 dark:text-zinc-400',    bg: 'bg-zinc-100 dark:bg-zinc-800',       label: 'System' },
   alert:      { icon: IconAlertCircle,   color: 'text-amber-600 dark:text-amber-400',  bg: 'bg-amber-100 dark:bg-amber-950/40',  label: 'Alert' },
@@ -75,7 +75,7 @@ export function Notifications() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: 'Total', value: notifications.length, color: 'text-zinc-600 dark:text-zinc-400', bg: 'bg-zinc-50 dark:bg-zinc-800/40' },
-          { label: 'Unread', value: unreadCount, color: 'text-violet-600 dark:text-violet-400', bg: 'bg-violet-50 dark:bg-violet-950/20' },
+          { label: 'Unread', value: unreadCount, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/20' },
           { label: 'Alerts', value: notifications.filter(n => n.type === 'alert').length, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-50 dark:bg-amber-950/20' },
           { label: 'System', value: notifications.filter(n => n.type === 'system').length, color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-50 dark:bg-blue-950/20' },
         ].map(stat => (
@@ -93,7 +93,7 @@ export function Notifications() {
           <div className="flex items-center gap-3">
             <h2 className="text-base font-semibold">Notifications</h2>
             {unreadCount > 0 && (
-              <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-950/60 dark:text-violet-300 border-0 text-xs">
+              <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-0 text-xs">
                 {unreadCount} unread
               </Badge>
             )}
@@ -143,7 +143,7 @@ export function Notifications() {
                 <div
                   key={notification.id}
                   className={`flex items-start gap-4 px-5 py-4 transition-colors ${
-                    !notification.read ? 'bg-violet-50/40 dark:bg-violet-950/10' : 'hover:bg-zinc-50/60 dark:hover:bg-zinc-800/30'
+                    !notification.read ? 'bg-blue-50/40 dark:bg-blue-950/10' : 'hover:bg-zinc-50/60 dark:hover:bg-zinc-800/30'
                   }`}
                 >
                   {/* Icon */}
@@ -162,7 +162,7 @@ export function Notifications() {
                           {config.label}
                         </Badge>
                         {!notification.read && (
-                          <span className="size-1.5 rounded-full bg-violet-500 shrink-0" />
+                          <span className="size-1.5 rounded-full bg-blue-500 shrink-0" />
                         )}
                       </div>
                       <span className="text-xs text-muted-foreground shrink-0 mt-0.5">{notification.time}</span>
