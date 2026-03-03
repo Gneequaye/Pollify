@@ -1,6 +1,6 @@
 package com.pollify.admin.service;
 
-import com.pollify.admin.controller.TenantManagementController.TenantStats;
+import com.pollify.admin.dto.tenant.TenantStats;
 import com.pollify.admin.dto.tenant.CreateTenantRequest;
 import com.pollify.admin.dto.tenant.TenantResponse;
 import com.pollify.admin.entity.master.PollifyTenant;
