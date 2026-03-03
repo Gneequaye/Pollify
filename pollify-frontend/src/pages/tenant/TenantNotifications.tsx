@@ -109,17 +109,24 @@ export function TenantNotifications() {
   return (
     <div className="flex flex-col gap-4 md:gap-6">
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      {/* Stats cards — matches design system */}
+      <div className="grid grid-cols-2 gap-4 @xl/main:grid-cols-4">
         {[
-          { label: 'Total',    value: notifications.length,                                  color: 'text-zinc-600 dark:text-zinc-400',   bg: 'bg-zinc-50 dark:bg-zinc-800/40' },
-          { label: 'Unread',   value: unreadCount,                                            color: 'text-blue-600 dark:text-blue-400',   bg: 'bg-blue-50 dark:bg-blue-950/20' },
-          { label: 'Elections', value: notifications.filter(n => n.type === 'election').length, color: 'text-blue-600 dark:text-blue-400',   bg: 'bg-blue-50 dark:bg-blue-950/20' },
-          { label: 'Results',  value: notifications.filter(n => n.type === 'results').length, color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-50 dark:bg-orange-950/20' },
-        ].map(stat => (
-          <div key={stat.label} className={`${panel} p-4 flex items-center justify-between`}>
-            <span className="text-sm text-muted-foreground">{stat.label}</span>
-            <span className={`text-2xl font-bold tabular-nums ${stat.color}`}>{stat.value}</span>
+          { label: 'Total',     value: notifications.length,                                     badge: 'All',      icon: <IconBell className="size-3" />,        footer: 'All notifications',    sub: 'Lifetime total' },
+          { label: 'Unread',    value: unreadCount,                                              badge: 'New',      icon: <IconBell className="size-3" />,        footer: 'Awaiting your review', sub: 'Action needed' },
+          { label: 'Elections', value: notifications.filter(n => n.type === 'election').length,  badge: 'Election', icon: <IconChartBar className="size-3" />,    footer: 'Election activity',    sub: 'Votes & updates' },
+          { label: 'Results',   value: notifications.filter(n => n.type === 'results').length,   badge: 'Results',  icon: <IconTrophy className="size-3" />,      footer: 'Published results',    sub: 'Completed elections' },
+        ].map((c) => (
+          <div key={c.label} className={`${panel} p-5 flex flex-col gap-3`}>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">{c.label}</p>
+              <Badge variant="outline" className="gap-1 text-xs">{c.icon} {c.badge}</Badge>
+            </div>
+            <p className="text-3xl font-semibold tabular-nums">{c.value}</p>
+            <div className="flex flex-col gap-0.5">
+              <p className="text-sm font-medium">{c.footer}</p>
+              <p className="text-xs text-muted-foreground">{c.sub}</p>
+            </div>
           </div>
         ))}
       </div>
@@ -179,7 +186,8 @@ export function TenantNotifications() {
               return (
                 <div
                   key={notification.id}
-                  className={`flex items-start gap-4 px-5 py-4 transition-colors ${
+                  onClick={() => !notification.read && markRead(notification.id)}
+                  className={`flex items-start gap-3 px-5 py-4 transition-colors cursor-default ${
                     !notification.read ? 'bg-blue-50/40 dark:bg-blue-950/10' : 'hover:bg-zinc-50/60 dark:hover:bg-zinc-800/30'
                   }`}
                 >
@@ -190,41 +198,39 @@ export function TenantNotifications() {
 
                   {/* Content */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className={`text-sm font-medium ${!notification.read ? 'text-foreground' : 'text-foreground/80'}`}>
-                          {notification.title}
-                        </p>
-                        <Badge variant="outline" className="text-xs px-1.5 py-0 h-4">
-                          {config.label}
-                        </Badge>
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2">
+                      <div className="flex items-center gap-2 flex-wrap min-w-0">
                         {!notification.read && (
                           <span className="size-1.5 rounded-full bg-blue-500 shrink-0" />
                         )}
+                        <p className={`text-sm font-medium truncate ${!notification.read ? 'text-foreground' : 'text-foreground/80'}`}>
+                          {notification.title}
+                        </p>
+                        <Badge variant="outline" className="text-xs px-1.5 py-0 h-4 shrink-0">
+                          {config.label}
+                        </Badge>
                       </div>
-                      <span className="text-xs text-muted-foreground shrink-0 mt-0.5">{notification.time}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">{notification.time}</span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1 leading-relaxed">{notification.message}</p>
-                  </div>
 
-                  {/* Actions */}
-                  <div className="flex items-center gap-1 shrink-0 mt-0.5">
-                    {!notification.read && (
+                    {/* Actions inline below message */}
+                    <div className="flex items-center gap-2 mt-2">
+                      {!notification.read && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); markRead(notification.id); }}
+                          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-emerald-600 transition-colors"
+                        >
+                          <IconCircleCheckFilled className="size-3.5" /> Mark read
+                        </button>
+                      )}
                       <button
-                        onClick={() => markRead(notification.id)}
-                        className="p-1.5 rounded-md text-muted-foreground hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition-colors"
-                        title="Mark as read"
+                        onClick={(e) => { e.stopPropagation(); dismiss(notification.id); }}
+                        className="flex items-center gap-1 text-xs text-muted-foreground hover:text-red-500 transition-colors"
                       >
-                        <IconCircleCheckFilled className="size-4" />
+                        <IconTrash className="size-3.5" /> Dismiss
                       </button>
-                    )}
-                    <button
-                      onClick={() => dismiss(notification.id)}
-                      className="p-1.5 rounded-md text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
-                      title="Dismiss"
-                    >
-                      <IconTrash className="size-4" />
-                    </button>
+                    </div>
                   </div>
                 </div>
               );
