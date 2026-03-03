@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { tenantService, TenantResponse } from '@/services/tenantService';
+import { ApiError } from '@/lib/api';
 import {
   IconTrendingUp,
   IconBuilding,
@@ -14,65 +16,12 @@ import {
   IconEye,
   IconSearch,
   IconSchool,
+  IconLoader,
+  IconAlertCircle,
+  IconRefresh,
 } from "@tabler/icons-react";
 
 const panel = "w-full bg-white dark:bg-zinc-900/70 border border-zinc-100 dark:border-zinc-800 rounded-xl shadow-sm backdrop-blur-xl";
-
-// Simulated data — replace with API call when backend is wired up
-const MOCK_TENANTS = [
-  {
-    tenantId: 'TEN001',
-    universityName: 'University of Ghana',
-    universityEmail: 'admin@ug.edu.gh',
-    schoolType: 'DOMAIN_SCHOOL',
-    tenantStatus: 'ACTIVE',
-    adminEmail: 'jkwame@ug.edu.gh',
-    adminFirstName: 'Kwame',
-    adminLastName: 'Mensah',
-    onboardingCompleted: true,
-    createdAt: '2024-01-15T10:30:00Z',
-    onboardedAt: '2024-01-20T14:00:00Z',
-  },
-  {
-    tenantId: 'TEN002',
-    universityName: 'Kwame Nkrumah University of Science and Technology',
-    universityEmail: 'admin@knust.edu.gh',
-    schoolType: 'CODE_SCHOOL',
-    tenantStatus: 'ACTIVE',
-    adminEmail: 'aboateng@knust.edu.gh',
-    adminFirstName: 'Ama',
-    adminLastName: 'Boateng',
-    onboardingCompleted: true,
-    createdAt: '2024-02-01T09:00:00Z',
-    onboardedAt: '2024-02-05T11:30:00Z',
-  },
-  {
-    tenantId: 'TEN003',
-    universityName: 'University of Cape Coast',
-    universityEmail: 'admin@ucc.edu.gh',
-    schoolType: 'DOMAIN_SCHOOL',
-    tenantStatus: 'PENDING',
-    adminEmail: 'eaddo@ucc.edu.gh',
-    adminFirstName: 'Efua',
-    adminLastName: 'Addo',
-    onboardingCompleted: false,
-    createdAt: '2024-03-10T08:00:00Z',
-    onboardedAt: null,
-  },
-  {
-    tenantId: 'TEN004',
-    universityName: 'Ashesi University',
-    universityEmail: 'admin@ashesi.edu.gh',
-    schoolType: 'CODE_SCHOOL',
-    tenantStatus: 'SUSPENDED',
-    adminEmail: 'kofori@ashesi.edu.gh',
-    adminFirstName: 'Kofi',
-    adminLastName: 'Ofori',
-    onboardingCompleted: true,
-    createdAt: '2023-11-01T12:00:00Z',
-    onboardedAt: '2023-11-10T16:00:00Z',
-  },
-];
 
 function StatusBadge({ status }: { status: string }) {
   switch (status) {
@@ -102,27 +51,45 @@ function StatusBadge({ status }: { status: string }) {
 export function Tenants() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
+  const [tenants, setTenants] = useState<TenantResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filtered = MOCK_TENANTS.filter(
+  const fetchTenants = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await tenantService.getAllTenants();
+      setTenants(data);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Failed to load schools');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchTenants(); }, []);
+
+  const filtered = tenants.filter(
     (t) =>
-      t.universityName.toLowerCase().includes(search.toLowerCase()) ||
-      t.adminEmail.toLowerCase().includes(search.toLowerCase()) ||
-      t.tenantId.toLowerCase().includes(search.toLowerCase())
+      t.universityName?.toLowerCase().includes(search.toLowerCase()) ||
+      t.adminEmail?.toLowerCase().includes(search.toLowerCase()) ||
+      t.tenantId?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalActive = MOCK_TENANTS.filter((t) => t.tenantStatus === 'ACTIVE').length;
-  const totalPending = MOCK_TENANTS.filter((t) => t.tenantStatus === 'PENDING').length;
-  const totalDomain = MOCK_TENANTS.filter((t) => t.schoolType === 'DOMAIN_SCHOOL').length;
+  const totalActive  = tenants.filter((t) => t.tenantStatus === 'ACTIVE').length;
+  const totalPending = tenants.filter((t) => t.tenantStatus === 'PENDING').length;
+  const totalDomain  = tenants.filter((t) => t.schoolType === 'DOMAIN_SCHOOL').length;
 
   return (
     <div className="flex flex-col gap-4 md:gap-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-2 @5xl/main:grid-cols-4">
         {[
-          { label: "Total Schools", value: MOCK_TENANTS.length, badge: "All time", badgeIcon: <IconTrendingUp className="size-3" />, footer: "Registered universities", sub: "All onboarded institutions", icon: <IconTrendingUp className="size-3.5" /> },
-          { label: "Active", value: totalActive, badge: "Live", badgeIcon: <IconCircleCheckFilled className="size-3" />, footer: "Currently active", sub: "Schools with active accounts", icon: <IconCircleCheckFilled className="size-3.5" /> },
-          { label: "Pending", value: totalPending, badge: "Awaiting", badgeIcon: <IconClock className="size-3" />, footer: "Awaiting onboarding", sub: "Invitation accepted, setup pending", icon: <IconClock className="size-3.5" /> },
-          { label: "Domain Schools", value: totalDomain, badge: "Type", badgeIcon: <IconSchool className="size-3" />, footer: "Email-domain verified", sub: "Using institutional email domains", icon: <IconSchool className="size-3.5" /> },
+          { label: "Total Schools",  value: loading ? "—" : tenants.length,      badge: "All time", badgeIcon: <IconTrendingUp className="size-3" />,        footer: "Registered universities",     sub: "All onboarded institutions",              icon: <IconTrendingUp className="size-3.5" /> },
+          { label: "Active",         value: loading ? "—" : totalActive,          badge: "Live",     badgeIcon: <IconCircleCheckFilled className="size-3" />,  footer: "Currently active",            sub: "Schools with active accounts",            icon: <IconCircleCheckFilled className="size-3.5" /> },
+          { label: "Pending",        value: loading ? "—" : totalPending,         badge: "Awaiting", badgeIcon: <IconClock className="size-3" />,              footer: "Awaiting onboarding",         sub: "Invitation accepted, setup pending",       icon: <IconClock className="size-3.5" /> },
+          { label: "Domain Schools", value: loading ? "—" : totalDomain,          badge: "Type",     badgeIcon: <IconSchool className="size-3" />,             footer: "Email-domain verified",       sub: "Using institutional email domains",        icon: <IconSchool className="size-3.5" /> },
         ].map((c) => (
           <div key={c.label} className={`${panel} p-5 flex flex-col gap-3`}>
             <div className="flex items-center justify-between">
@@ -148,19 +115,41 @@ export function Tenants() {
               Schools that have accepted invitations and completed onboarding
             </p>
           </div>
-          <div className="relative w-full sm:w-64">
-            <IconSearch className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
-            <Input
-              placeholder="Search schools..."
-              className="pl-8 h-9"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchTenants}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <IconRefresh className={`size-3.5 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+            <div className="relative w-full sm:w-64">
+              <IconSearch className="absolute left-2.5 top-2.5 size-4 text-muted-foreground" />
+              <Input
+                placeholder="Search schools..."
+                className="pl-8 h-9"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Table or empty state */}
-        {filtered.length === 0 ? (
+        {/* Loading / Error / Table */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20 gap-3">
+            <IconLoader className="size-5 animate-spin text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Loading schools…</span>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3 text-center px-6">
+            <IconAlertCircle className="size-8 text-red-500" />
+            <p className="text-sm text-muted-foreground">{error}</p>
+            <button onClick={fetchTenants} className="text-xs underline text-muted-foreground">
+              Try again
+            </button>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center gap-3 px-6">
             <IconBuilding className="size-10 text-muted-foreground" />
             <div>
@@ -248,11 +237,13 @@ export function Tenants() {
         )}
 
         {/* Footer count */}
-        <div className="px-6 py-3 border-t border-zinc-100 dark:border-zinc-800">
-          <p className="text-xs text-muted-foreground">
-            Showing {filtered.length} of {MOCK_TENANTS.length} schools
-          </p>
-        </div>
+        {!loading && !error && (
+          <div className="px-6 py-3 border-t border-zinc-100 dark:border-zinc-800">
+            <p className="text-xs text-muted-foreground">
+              Showing {filtered.length} of {tenants.length} schools
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

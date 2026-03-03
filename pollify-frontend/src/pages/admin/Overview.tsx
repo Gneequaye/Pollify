@@ -1,17 +1,36 @@
-import { IconTrendingUp, IconTrendingDown } from "@tabler/icons-react"
+import { useEffect, useState } from "react"
+import { IconTrendingUp, IconTrendingDown, IconLoader } from "@tabler/icons-react"
 import { Badge } from '@/components/ui/badge'
 import { LiveActivityChart } from '@/components/live-activity-chart'
+import { tenantService } from '@/services/tenantService'
+import { invitationService } from '@/services/invitationService'
 
 const panel = "w-full bg-white dark:bg-zinc-900/70 border border-zinc-100 dark:border-zinc-800 rounded-xl shadow-sm backdrop-blur-xl";
 
 export function Overview() {
-  // TODO: Fetch real data from API
-  const metrics = {
-    totalTenants: 4,
-    activeTenants: 2,
-    totalInvitations: 6,
-    pendingInvitations: 2,
-  };
+  const [metrics, setMetrics] = useState({
+    totalTenants: 0,
+    activeTenants: 0,
+    totalInvitations: 0,
+    pendingInvitations: 0,
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    Promise.all([
+      tenantService.getAllTenants().catch(() => []),
+      invitationService.getAllInvitations().catch(() => []),
+    ]).then(([tenants, invitations]) => {
+      setMetrics({
+        totalTenants:      tenants.length,
+        activeTenants:     tenants.filter((t) => t.tenantStatus === 'ACTIVE').length,
+        totalInvitations:  invitations.length,
+        pendingInvitations: invitations.filter((i) =>
+          i.message?.toUpperCase() === 'PENDING'
+        ).length,
+      });
+    }).finally(() => setLoading(false));
+  }, []);
 
   const cards = [
     {
@@ -64,7 +83,12 @@ export function Overview() {
                 {c.badgeIcon} {c.badge}
               </Badge>
             </div>
-            <p className="text-3xl font-semibold tabular-nums">{c.value}</p>
+            <p className="text-3xl font-semibold tabular-nums">
+              {loading
+                ? <IconLoader className="size-5 animate-spin text-muted-foreground" />
+                : c.value
+              }
+            </p>
             <div className="flex flex-col gap-0.5">
               <p className="text-sm font-medium flex items-center gap-1">
                 {c.footer} {c.icon}
