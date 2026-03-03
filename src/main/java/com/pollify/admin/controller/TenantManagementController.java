@@ -2,10 +2,9 @@ package com.pollify.admin.controller;
 
 import com.pollify.admin.dto.tenant.CreateTenantRequest;
 import com.pollify.admin.dto.tenant.TenantResponse;
+import com.pollify.admin.dto.tenant.TenantStats;
 import com.pollify.admin.service.TenantManagementService;
 import jakarta.validation.Valid;
-import lombok.AllArgsConstructor;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -51,12 +50,4 @@ public class TenantManagementController {
         return ResponseEntity.ok(stats);
     }
 
-    @Data
-    @AllArgsConstructor
-    public static class TenantStats {
-        private long totalTenants;
-        private long activeTenants;
-        private long pendingTenants;
-        private long suspendedTenants;
-    }
 }
