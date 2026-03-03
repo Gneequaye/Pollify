@@ -14,8 +14,6 @@ public class ValidateInvitationResponse {
     private boolean valid;
     private String universityName;
     private String universityEmail;
-    private String schoolType;
-    private String emailDomain;  // For DOMAIN_SCHOOL
-    private String schoolCode;   // For CODE_SCHOOL
+    private String invitationCode;
     private String message;
 }
