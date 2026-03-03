@@ -94,8 +94,8 @@ public class TenantOnboardingService {
             String loginToken = jwtTokenProvider.generateToken(
                     tenantId,
                     invitation.getUniversityEmail(),
-                    "TENANT_ADMIN",
-                    tenantId
+                    tenantId,
+                    "TENANT_ADMIN"
             );
 
             log.info("Onboarding completed successfully for tenant: {}", tenantId);
