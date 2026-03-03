@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -83,9 +84,36 @@ public class InvitationController {
     }
 
     /**
+     * GET /api/super-admin/invitations
+     * Returns all invitations for the super admin dashboard
+     */
+    @GetMapping("/super-admin/invitations")
+    public ResponseEntity<?> getAllInvitations(
+            @RequestHeader("Authorization") String authHeader) {
+
+        try {
+            String token = authHeader.replace("Bearer ", "");
+            String role = jwtTokenProvider.getRoleFromToken(token);
+
+            if (!"SUPER_ADMIN".equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                        .body("Only super admins can view invitations");
+            }
+
+            List<InvitationResponse> invitations = invitationService.getAllInvitations();
+            return ResponseEntity.ok(invitations);
+
+        } catch (Exception e) {
+            log.error("Error fetching invitations", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to fetch invitations");
+        }
+    }
+
+    /**
      * Epic 1 - Story 2: Validate invitation token (public endpoint)
      * GET /api/public/invitations/validate?token={token}
-     * 
+     *
      * This is called when school clicks invitation link
      */
     @GetMapping("/public/invitations/validate")
@@ -106,7 +134,7 @@ public class InvitationController {
         } catch (Exception e) {
             log.error("Error validating invitation", e);
             ValidateInvitationResponse errorResponse = new ValidateInvitationResponse(
-                    false, null, null, null, null, null,
+                    false, null, null, null,
                     "Failed to validate invitation"
             );
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
