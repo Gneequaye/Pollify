@@ -1,6 +1,8 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { invitationService, InvitationResponse } from '@/services/invitationService';
+import { ApiError } from '@/lib/api';
 
 const panel = "w-full bg-white dark:bg-zinc-900/70 border border-zinc-100 dark:border-zinc-800 rounded-xl shadow-sm backdrop-blur-xl";
 import {
@@ -11,82 +13,10 @@ import {
   IconXboxX,
   IconSearch,
   IconInbox,
+  IconLoader,
+  IconAlertCircle,
+  IconRefresh,
 } from "@tabler/icons-react";
-
-// ── Simulated mock data ──────────────────────────────────────────────────────
-type MockInvitation = {
-  id: string;
-  universityName: string;
-  universityEmail: string;
-  schoolType: "DOMAIN_SCHOOL" | "CODE_SCHOOL";
-  status: "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED";
-  invitedBy: string;
-  sentAt: string;
-  expiresAt: string;
-};
-
-const MOCK_INVITATIONS: MockInvitation[] = [
-  {
-    id: "INV-001",
-    universityName: "University of Ghana",
-    universityEmail: "admin@ug.edu.gh",
-    schoolType: "DOMAIN_SCHOOL",
-    status: "ACCEPTED",
-    invitedBy: "Super Admin",
-    sentAt: "2025-11-01",
-    expiresAt: "2025-11-08",
-  },
-  {
-    id: "INV-002",
-    universityName: "KNUST",
-    universityEmail: "admin@knust.edu.gh",
-    schoolType: "CODE_SCHOOL",
-    status: "ACCEPTED",
-    invitedBy: "Super Admin",
-    sentAt: "2025-11-05",
-    expiresAt: "2025-11-12",
-  },
-  {
-    id: "INV-003",
-    universityName: "University of Cape Coast",
-    universityEmail: "admin@ucc.edu.gh",
-    schoolType: "DOMAIN_SCHOOL",
-    status: "PENDING",
-    invitedBy: "Super Admin",
-    sentAt: "2026-02-18",
-    expiresAt: "2026-02-25",
-  },
-  {
-    id: "INV-004",
-    universityName: "Ashesi University",
-    universityEmail: "admin@ashesi.edu.gh",
-    schoolType: "CODE_SCHOOL",
-    status: "EXPIRED",
-    invitedBy: "Super Admin",
-    sentAt: "2025-12-01",
-    expiresAt: "2025-12-08",
-  },
-  {
-    id: "INV-005",
-    universityName: "Ghana Institute of Management",
-    universityEmail: "admin@gimpa.edu.gh",
-    schoolType: "DOMAIN_SCHOOL",
-    status: "REVOKED",
-    invitedBy: "Super Admin",
-    sentAt: "2025-10-10",
-    expiresAt: "2025-10-17",
-  },
-  {
-    id: "INV-006",
-    universityName: "Central University",
-    universityEmail: "admin@central.edu.gh",
-    schoolType: "CODE_SCHOOL",
-    status: "PENDING",
-    invitedBy: "Super Admin",
-    sentAt: "2026-02-20",
-    expiresAt: "2026-02-27",
-  },
-];
 
 const STATUS_CONFIG = {
   PENDING: {
@@ -118,20 +48,50 @@ const formatDate = (dateString: string) =>
     day: "numeric",
   });
 
+// Derive a status string from the InvitationResponse message field
+// (backend returns message = status string e.g. "PENDING", "ACCEPTED", etc.)
+type InvStatus = "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED";
+
+function getStatus(inv: InvitationResponse): InvStatus {
+  const msg = inv.message?.toUpperCase() ?? "";
+  if (msg === "PENDING" || msg === "ACCEPTED" || msg === "EXPIRED" || msg === "REVOKED") {
+    return msg as InvStatus;
+  }
+  return "PENDING";
+}
+
 export function Invitations() {
   const [search, setSearch] = useState("");
+  const [invitations, setInvitations] = useState<InvitationResponse[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const filtered = MOCK_INVITATIONS.filter(
+  const fetchInvitations = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await invitationService.getAllInvitations();
+      setInvitations(data);
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Failed to load invitations");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { fetchInvitations(); }, []);
+
+  const filtered = invitations.filter(
     (inv) =>
-      inv.universityName.toLowerCase().includes(search.toLowerCase()) ||
-      inv.universityEmail.toLowerCase().includes(search.toLowerCase()) ||
-      inv.id.toLowerCase().includes(search.toLowerCase())
+      inv.universityName?.toLowerCase().includes(search.toLowerCase()) ||
+      inv.universityEmail?.toLowerCase().includes(search.toLowerCase()) ||
+      inv.invitationToken?.toLowerCase().includes(search.toLowerCase())
   );
 
-  const totalPending = MOCK_INVITATIONS.filter((i) => i.status === "PENDING").length;
-  const totalAccepted = MOCK_INVITATIONS.filter((i) => i.status === "ACCEPTED").length;
-  const totalExpiredRevoked = MOCK_INVITATIONS.filter(
-    (i) => i.status === "EXPIRED" || i.status === "REVOKED"
+  const totalPending  = invitations.filter((i) => getStatus(i) === "PENDING").length;
+  const totalAccepted = invitations.filter((i) => getStatus(i) === "ACCEPTED").length;
+  const totalExpiredRevoked = invitations.filter(
+    (i) => getStatus(i) === "EXPIRED" || getStatus(i) === "REVOKED"
   ).length;
 
   return (
@@ -139,7 +99,6 @@ export function Invitations() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 gap-4 @xl/main:grid-cols-3">
-        {/* Total Sent */}
         <div className={`${panel} p-5 flex flex-col gap-3`}>
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">Total Sent</p>
@@ -147,7 +106,9 @@ export function Invitations() {
               <IconTrendingUp className="size-3" /> All time
             </Badge>
           </div>
-          <p className="text-3xl font-semibold tabular-nums">{MOCK_INVITATIONS.length}</p>
+          <p className="text-3xl font-semibold tabular-nums">
+            {loading ? "—" : invitations.length}
+          </p>
           <div className="flex flex-col gap-0.5">
             <p className="text-sm font-medium flex items-center gap-1">
               All invitations ever sent <IconTrendingUp className="size-3.5" />
@@ -156,7 +117,6 @@ export function Invitations() {
           </div>
         </div>
 
-        {/* Pending */}
         <div className={`${panel} p-5 flex flex-col gap-3`}>
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">Pending</p>
@@ -164,7 +124,9 @@ export function Invitations() {
               <IconClock className="size-3" /> Awaiting
             </Badge>
           </div>
-          <p className="text-3xl font-semibold tabular-nums">{totalPending}</p>
+          <p className="text-3xl font-semibold tabular-nums">
+            {loading ? "—" : totalPending}
+          </p>
           <div className="flex flex-col gap-0.5">
             <p className="text-sm font-medium flex items-center gap-1">
               Awaiting response <IconClock className="size-3.5" />
@@ -173,7 +135,6 @@ export function Invitations() {
           </div>
         </div>
 
-        {/* Accepted */}
         <div className={`${panel} p-5 flex flex-col gap-3`}>
           <div className="flex items-center justify-between">
             <p className="text-sm text-muted-foreground">Accepted</p>
@@ -181,12 +142,16 @@ export function Invitations() {
               <IconCircleCheckFilled className="size-3" /> Done
             </Badge>
           </div>
-          <p className="text-3xl font-semibold tabular-nums">{totalAccepted}</p>
+          <p className="text-3xl font-semibold tabular-nums">
+            {loading ? "—" : totalAccepted}
+          </p>
           <div className="flex flex-col gap-0.5">
             <p className="text-sm font-medium flex items-center gap-1">
               Successfully onboarded <IconCircleCheckFilled className="size-3.5" />
             </p>
-            <p className="text-xs text-muted-foreground">{totalExpiredRevoked} expired or cancelled</p>
+            <p className="text-xs text-muted-foreground">
+              {loading ? "" : `${totalExpiredRevoked} expired or cancelled`}
+            </p>
           </div>
         </div>
       </div>
@@ -194,11 +159,20 @@ export function Invitations() {
       {/* Invitations Table */}
       <div className={`${panel} flex flex-col gap-0 overflow-hidden`}>
         {/* Header */}
-        <div className="flex flex-col gap-1 px-6 pt-6 pb-4 border-b border-zinc-100 dark:border-zinc-800">
-          <h3 className="text-base font-semibold">All Invitations</h3>
-          <p className="text-sm text-muted-foreground">
-            A complete record of all school invitations sent from this platform
-          </p>
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between px-6 pt-6 pb-4 border-b border-zinc-100 dark:border-zinc-800">
+          <div>
+            <h3 className="text-base font-semibold">All Invitations</h3>
+            <p className="text-sm text-muted-foreground">
+              A complete record of all school invitations sent from this platform
+            </p>
+          </div>
+          <button
+            onClick={fetchInvitations}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <IconRefresh className={`size-3.5 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </button>
         </div>
 
         {/* Search */}
@@ -207,45 +181,57 @@ export function Invitations() {
             <IconSearch className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
             <input
               className="flex h-9 w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-transparent pl-9 pr-3 py-1 text-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              placeholder="Search by school, email or ID…"
+              placeholder="Search by school or email…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
         </div>
 
-        {/* Table or empty state */}
-        {filtered.length === 0 ? (
+        {/* Loading */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20 gap-3">
+            <IconLoader className="size-5 animate-spin text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Loading invitations…</span>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3 text-center px-6">
+            <IconAlertCircle className="size-8 text-red-500" />
+            <p className="text-sm text-muted-foreground">{error}</p>
+            <button onClick={fetchInvitations} className="text-xs underline text-muted-foreground">
+              Try again
+            </button>
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3 text-center px-6">
             <IconInbox className="size-10 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No invitations match your search</p>
+            <p className="text-sm text-muted-foreground">
+              {search ? "No invitations match your search" : "No invitations sent yet"}
+            </p>
           </div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow className="bg-zinc-50 dark:bg-zinc-800/50 hover:bg-zinc-50 dark:hover:bg-zinc-800/50">
-                <TableHead className="pl-6 w-[110px] font-semibold text-xs uppercase tracking-wide">ID</TableHead>
-                <TableHead className="font-semibold text-xs uppercase tracking-wide">School</TableHead>
+                <TableHead className="pl-6 font-semibold text-xs uppercase tracking-wide">School</TableHead>
                 <TableHead className="font-semibold text-xs uppercase tracking-wide">Contact Email</TableHead>
-                <TableHead className="font-semibold text-xs uppercase tracking-wide">Type</TableHead>
+                <TableHead className="font-semibold text-xs uppercase tracking-wide">Code</TableHead>
                 <TableHead className="font-semibold text-xs uppercase tracking-wide">Status</TableHead>
                 <TableHead className="font-semibold text-xs uppercase tracking-wide">Sent</TableHead>
-                <TableHead className="font-semibold text-xs uppercase tracking-wide">Expires</TableHead>
-                <TableHead className="pr-6 font-semibold text-xs uppercase tracking-wide">Invited By</TableHead>
+                <TableHead className="pr-6 font-semibold text-xs uppercase tracking-wide">Expires</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filtered.map((inv) => {
-                const statusCfg = STATUS_CONFIG[inv.status];
+                const status = getStatus(inv);
+                const statusCfg = STATUS_CONFIG[status];
                 const StatusIcon = statusCfg.icon;
                 return (
-                  <TableRow key={inv.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30 transition-colors">
+                  <TableRow
+                    key={inv.invitationToken}
+                    className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/30 transition-colors"
+                  >
                     <TableCell className="pl-6">
-                      <Badge variant="outline" className="font-mono text-xs">
-                        {inv.id}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
                       <div className="font-medium text-sm">{inv.universityName}</div>
                     </TableCell>
                     <TableCell>
@@ -255,9 +241,9 @@ export function Invitations() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant="secondary" className="text-xs">
-                        {inv.schoolType === "DOMAIN_SCHOOL" ? "Domain" : "Code"}
-                      </Badge>
+                      <span className="font-mono text-xs bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 rounded">
+                        {inv.invitationCode ?? '—'}
+                      </span>
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -269,13 +255,10 @@ export function Invitations() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {formatDate(inv.sentAt)}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {formatDate(inv.expiresAt)}
+                      {inv.expiresAt ? formatDate(new Date(new Date(inv.expiresAt).getTime() - 7 * 24 * 60 * 60 * 1000).toISOString()) : "—"}
                     </TableCell>
                     <TableCell className="pr-6 text-sm text-muted-foreground">
-                      {inv.invitedBy}
+                      {inv.expiresAt ? formatDate(inv.expiresAt) : "—"}
                     </TableCell>
                   </TableRow>
                 );
@@ -285,11 +268,13 @@ export function Invitations() {
         )}
 
         {/* Footer */}
-        <div className="px-6 py-3 border-t border-zinc-100 dark:border-zinc-800">
-          <p className="text-xs text-muted-foreground">
-            Showing {filtered.length} of {MOCK_INVITATIONS.length} invitations
-          </p>
-        </div>
+        {!loading && !error && (
+          <div className="px-6 py-3 border-t border-zinc-100 dark:border-zinc-800">
+            <p className="text-xs text-muted-foreground">
+              Showing {filtered.length} of {invitations.length} invitations
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );
