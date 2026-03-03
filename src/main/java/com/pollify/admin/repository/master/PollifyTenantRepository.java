@@ -18,13 +18,13 @@ public interface PollifyTenantRepository extends JpaRepository<PollifyTenant, St
     Optional<PollifyTenant> findByDatabaseSchema(String databaseSchema);
     
     Optional<PollifyTenant> findByUniversityEmail(String universityEmail);
-    
+
     Optional<PollifyTenant> findBySchoolCode(String schoolCode);
-    
+
     boolean existsByAdminEmail(String adminEmail);
-    
+
     boolean existsByDatabaseSchema(String databaseSchema);
-    
+
     boolean existsByUniversityEmail(String universityEmail);
     
     boolean existsBySchoolCode(String schoolCode);
