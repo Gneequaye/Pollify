@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -13,12 +14,16 @@ import {
   IconArrowLeft,
   IconSend,
   IconList,
+  IconCopy,
+  IconLink,
 } from '@tabler/icons-react';
 
 type SuccessState = {
   universityName: string;
   universityEmail: string;
-  invitationId: string;
+  invitationToken: string;
+  invitationCode: string;
+  invitationUrl: string;
   expiresAt: string;
 };
 
@@ -26,6 +31,13 @@ export function InvitationSuccess() {
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state as SuccessState | null;
+
+  const copyLink = () => {
+    if (state?.invitationUrl) {
+      navigator.clipboard.writeText(state.invitationUrl);
+      toast.success('Invitation link copied to clipboard!');
+    }
+  };
 
   // Guard: if someone navigates here directly with no state, redirect away
   if (!state) {
@@ -65,9 +77,11 @@ export function InvitationSuccess() {
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <IconHash className="size-4 shrink-0" /> Invitation ID
+              <IconHash className="size-4 shrink-0" /> Invitation Code
             </div>
-            <Badge variant="outline" className="font-mono text-xs">{state.invitationId}</Badge>
+            <Badge variant="outline" className="font-mono text-xs">
+              {state.invitationCode}
+            </Badge>
           </div>
           <Separator />
           <div className="flex items-center justify-between gap-2">
@@ -89,6 +103,20 @@ export function InvitationSuccess() {
               <IconCalendar className="size-4 shrink-0" /> Expires on
             </div>
             <span className="text-sm font-medium text-right">{state.expiresAt}</span>
+          </div>
+          <Separator />
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground shrink-0">
+              <IconLink className="size-4 shrink-0" /> Invitation Link
+            </div>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-xs font-mono text-muted-foreground truncate max-w-[140px]">
+                {state.invitationUrl}
+              </span>
+              <Button variant="ghost" size="icon" className="size-7 shrink-0" onClick={copyLink}>
+                <IconCopy className="size-3.5" />
+              </Button>
+            </div>
           </div>
         </div>
         <div className="flex items-center justify-center mt-1">
