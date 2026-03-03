@@ -1,22 +1,38 @@
 import { apiRequest } from '@/lib/api';
 
+// ─── Request DTOs ────────────────────────────────────────────────────────────
+
 export interface SendInvitationRequest {
-  universityName: string;
-  universityEmail: string;
+  universityName?: string;
+  universityEmail?: string;
+  invitationCode?: string;
+  expiryDays?: number;
 }
 
+// ─── Response DTOs ───────────────────────────────────────────────────────────
+
 export interface InvitationResponse {
-  invitationId: string;
   invitationToken: string;
   universityName: string;
   universityEmail: string;
-  invitationStatus: string;
+  invitationCode: string;
+  invitationUrl: string;
   expiresAt: string;
-  createdAt: string;
+  message: string;
 }
 
+export interface ValidateInvitationResponse {
+  valid: boolean;
+  universityName: string | null;
+  universityEmail: string | null;
+  invitationCode: string | null;
+  message: string;
+}
+
+// ─── Service ─────────────────────────────────────────────────────────────────
+
 export const invitationService = {
-  // Send invitation (Epic 1, Story 1.1)
+  /** POST /api/super-admin/invitations — send invitation email to a school */
   async sendInvitation(data: SendInvitationRequest): Promise<InvitationResponse> {
     return apiRequest('/super-admin/invitations', {
       method: 'POST',
@@ -24,24 +40,17 @@ export const invitationService = {
     });
   },
 
-  // Get all invitations
+  /** GET /api/super-admin/invitations — list all invitations */
   async getAllInvitations(): Promise<InvitationResponse[]> {
     return apiRequest('/super-admin/invitations', {
       method: 'GET',
     });
   },
 
-  // Resend invitation
-  async resendInvitation(invitationId: string): Promise<InvitationResponse> {
-    return apiRequest(`/super-admin/invitations/${invitationId}/resend`, {
-      method: 'POST',
-    });
-  },
-
-  // Cancel invitation
-  async cancelInvitation(invitationId: string): Promise<void> {
-    return apiRequest(`/super-admin/invitations/${invitationId}/cancel`, {
-      method: 'DELETE',
+  /** GET /api/public/invitations/validate?token=xxx — verify a token from the email link */
+  async validateToken(token: string): Promise<ValidateInvitationResponse> {
+    return apiRequest(`/public/invitations/validate?token=${encodeURIComponent(token)}`, {
+      method: 'GET',
     });
   },
 };
