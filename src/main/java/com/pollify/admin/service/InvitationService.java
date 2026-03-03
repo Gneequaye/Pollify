@@ -1,11 +1,9 @@
 package com.pollify.admin.service;
 
 import com.pollify.admin.dto.*;
-import com.pollify.admin.entity.master.PollifyTenant;
 import com.pollify.admin.entity.master.TenantInvitation;
 import com.pollify.admin.exception.InvitationException;
 import com.pollify.admin.multitenancy.TenantContext;
-import com.pollify.admin.repository.master.EmailDomainIndexRepository;
 import com.pollify.admin.repository.master.PollifyTenantRepository;
 import com.pollify.admin.repository.master.TenantInvitationRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.OffsetDateTime;
 import java.util.Base64;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -35,19 +34,19 @@ public class InvitationService {
 
     private final TenantInvitationRepository invitationRepository;
     private final PollifyTenantRepository tenantRepository;
-    private final EmailDomainIndexRepository domainIndexRepository;
+    private final EmailService emailService;
     private final SecureRandom secureRandom = new SecureRandom();
 
-    @Value("${pollify.frontend.url:http://localhost:3000}")
+    @Value("${pollify.frontend.url:http://localhost:8080}")
     private String frontendUrl;
 
     public InvitationService(
             TenantInvitationRepository invitationRepository,
             PollifyTenantRepository tenantRepository,
-            EmailDomainIndexRepository domainIndexRepository) {
+            EmailService emailService) {
         this.invitationRepository = invitationRepository;
         this.tenantRepository = tenantRepository;
-        this.domainIndexRepository = domainIndexRepository;
+        this.emailService = emailService;
     }
 
     /**
@@ -61,54 +60,70 @@ public class InvitationService {
             // Set master context for validation queries
             TenantContext.setTenantId(null);
 
-            // 1. Validate: Check if university already invited or onboarded
+            // 1. Validate: not already invited or onboarded
             validateNotAlreadyInvited(request);
             validateNotAlreadyOnboarded(request);
 
-            // 2. Validate school type specific requirements
-            validateSchoolTypeRequirements(request);
-
-            // 3. Generate unique invitation token
+            // 2. Generate unique invitation token
             String invitationToken = generateSecureToken();
 
-            // 4. Create invitation record
+            // 3. Create invitation record
             TenantInvitation invitation = new TenantInvitation();
             invitation.setInvitationToken(invitationToken);
             invitation.setUniversityName(request.getUniversityName());
             invitation.setUniversityEmail(request.getUniversityEmail());
-            invitation.setSchoolType(request.getSchoolType());
+            invitation.setInvitationCode(request.getInvitationCode().toUpperCase().trim());
             invitation.setInvitedBy(superAdminId);
-
-            // Set school type specific fields
-            if (request.getSchoolType() == PollifyTenant.SchoolType.DOMAIN_SCHOOL) {
-                invitation.setEmailDomain(request.getEmailDomain().toLowerCase().trim());
-            } else {
-                invitation.setSchoolCode(request.getSchoolCode().toUpperCase().trim());
-            }
 
             // Set expiry (default 7 days)
             int expiryDays = request.getExpiryDays() != null ? request.getExpiryDays() : 7;
             invitation.setExpiresAt(OffsetDateTime.now().plusDays(expiryDays));
 
-            // 5. Save invitation
+            // 4. Save invitation
             invitation = invitationRepository.save(invitation);
 
-            log.info("Invitation sent successfully: token={}, university={}", 
+            log.info("Invitation sent successfully: token={}, university={}",
                     invitationToken, request.getUniversityName());
 
-            // 6. Build response with invitation URL
-            String invitationUrl = String.format("%s/onboarding?token=%s", frontendUrl, invitationToken);
+            // 5. Build response with invitation URL
+            String invitationUrl = String.format("%s/register/%s", frontendUrl, invitationToken);
+
+            // 6. Send invitation email via SMTP + Thymeleaf template
+            emailService.sendInvitationEmail(invitation);
 
             return new InvitationResponse(
                     invitationToken,
                     invitation.getUniversityName(),
                     invitation.getUniversityEmail(),
-                    invitation.getSchoolType().toString(),
+                    invitation.getInvitationCode(),
                     invitationUrl,
                     invitation.getExpiresAt(),
                     "Invitation sent successfully. Valid until " + invitation.getExpiresAt()
             );
 
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    /**
+     * Get all invitations (for super admin dashboard)
+     */
+    @Transactional(readOnly = true)
+    public List<InvitationResponse> getAllInvitations() {
+        try {
+            TenantContext.setTenantId(null);
+            return invitationRepository.findAll().stream()
+                    .map(inv -> new InvitationResponse(
+                            inv.getInvitationToken(),
+                            inv.getUniversityName(),
+                            inv.getUniversityEmail(),
+                            inv.getInvitationCode(),
+                            String.format("%s/register/%s", frontendUrl, inv.getInvitationToken()),
+                            inv.getExpiresAt(),
+                            inv.getInvitationStatus().toString()
+                    ))
+                    .toList();
         } finally {
             TenantContext.clear();
         }
@@ -128,34 +143,22 @@ public class InvitationService {
                     .orElse(null);
 
             if (invitation == null) {
-                return new ValidateInvitationResponse(
-                        false, null, null, null, null, null,
-                        "Invalid invitation token"
-                );
+                return new ValidateInvitationResponse(false, null, null, null, "Invalid invitation token");
             }
 
             // Check if already accepted
             if (invitation.getInvitationStatus() == TenantInvitation.InvitationStatus.ACCEPTED) {
-                return new ValidateInvitationResponse(
-                        false, null, null, null, null, null,
-                        "This invitation has already been accepted"
-                );
+                return new ValidateInvitationResponse(false, null, null, null, "This invitation has already been accepted");
             }
 
             // Check if expired
             if (OffsetDateTime.now().isAfter(invitation.getExpiresAt())) {
-                return new ValidateInvitationResponse(
-                        false, null, null, null, null, null,
-                        "This invitation has expired"
-                );
+                return new ValidateInvitationResponse(false, null, null, null, "This invitation has expired");
             }
 
             // Check if revoked
             if (invitation.getInvitationStatus() == TenantInvitation.InvitationStatus.REVOKED) {
-                return new ValidateInvitationResponse(
-                        false, null, null, null, null, null,
-                        "This invitation has been revoked"
-                );
+                return new ValidateInvitationResponse(false, null, null, null, "This invitation has been revoked");
             }
 
             // Valid invitation
@@ -163,9 +166,7 @@ public class InvitationService {
                     true,
                     invitation.getUniversityName(),
                     invitation.getUniversityEmail(),
-                    invitation.getSchoolType().toString(),
-                    invitation.getEmailDomain(),
-                    invitation.getSchoolCode(),
+                    invitation.getInvitationCode(),
                     "Invitation is valid"
             );
 
@@ -203,19 +204,10 @@ public class InvitationService {
                     "An invitation has already been sent to this university email"
             );
         }
-
-        if (request.getSchoolType() == PollifyTenant.SchoolType.DOMAIN_SCHOOL) {
-            if (invitationRepository.existsByEmailDomain(request.getEmailDomain())) {
-                throw new InvitationException(
-                        "This email domain is already invited or registered"
-                );
-            }
-        } else {
-            if (invitationRepository.existsBySchoolCode(request.getSchoolCode())) {
-                throw new InvitationException(
-                        "This school code is already in use"
-                );
-            }
+        if (invitationRepository.existsByInvitationCode(request.getInvitationCode().toUpperCase().trim())) {
+            throw new InvitationException(
+                    "This invitation code is already in use"
+            );
         }
     }
 
@@ -224,42 +216,6 @@ public class InvitationService {
             throw new InvitationException(
                     "This university is already onboarded to Pollify"
             );
-        }
-
-        if (request.getSchoolType() == PollifyTenant.SchoolType.DOMAIN_SCHOOL) {
-            if (domainIndexRepository.existsByEmailDomain(request.getEmailDomain())) {
-                throw new InvitationException(
-                        "This email domain is already registered"
-                );
-            }
-        }
-    }
-
-    private void validateSchoolTypeRequirements(SendInvitationRequest request) {
-        if (request.getSchoolType() == PollifyTenant.SchoolType.DOMAIN_SCHOOL) {
-            if (request.getEmailDomain() == null || request.getEmailDomain().trim().isEmpty()) {
-                throw new InvitationException(
-                        "Email domain is required for DOMAIN_SCHOOL type"
-                );
-            }
-            // Validate domain format
-            if (!request.getEmailDomain().contains(".")) {
-                throw new InvitationException(
-                        "Invalid email domain format"
-                );
-            }
-        } else {
-            if (request.getSchoolCode() == null || request.getSchoolCode().trim().isEmpty()) {
-                throw new InvitationException(
-                        "School code is required for CODE_SCHOOL type"
-                );
-            }
-            // Validate code format (alphanumeric, 4-20 chars)
-            if (!request.getSchoolCode().matches("^[A-Z0-9]{4,20}$")) {
-                throw new InvitationException(
-                        "School code must be 4-20 alphanumeric characters (uppercase)"
-                );
-            }
         }
     }
 
