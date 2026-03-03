@@ -33,15 +33,8 @@ public class TenantInvitation {
     @Column(name = "university_email", nullable = false, unique = true)
     private String universityEmail;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "school_type", nullable = false, length = 50)
-    private PollifyTenant.SchoolType schoolType;
-
-    @Column(name = "email_domain", length = 255)
-    private String emailDomain;  // For DOMAIN_SCHOOL type (e.g., "st.ug.edu.gh")
-
-    @Column(name = "school_code", length = 20)
-    private String schoolCode;   // For CODE_SCHOOL type (e.g., "KNUST2024")
+    @Column(name = "invitation_code", nullable = false, unique = true, length = 20)
+    private String invitationCode;  // Unique code assigned at invite time (e.g. "KNUST2024")
 
     @Enumerated(EnumType.STRING)
     @Column(name = "invitation_status", nullable = false, length = 50)
