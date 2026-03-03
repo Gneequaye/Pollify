@@ -18,8 +18,6 @@ public interface TenantInvitationRepository extends JpaRepository<TenantInvitati
     Optional<TenantInvitation> findByUniversityEmail(String universityEmail);
     
     boolean existsByUniversityEmail(String universityEmail);
-    
-    boolean existsByEmailDomain(String emailDomain);
-    
-    boolean existsBySchoolCode(String schoolCode);
+
+    boolean existsByInvitationCode(String invitationCode);
 }
