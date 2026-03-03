@@ -16,7 +16,7 @@ public class InvitationResponse {
     private String invitationToken;
     private String universityName;
     private String universityEmail;
-    private String schoolType;
+    private String invitationCode;
     private String invitationUrl;
     private OffsetDateTime expiresAt;
     private String message;
