@@ -41,62 +41,73 @@ public class AuthenticationService {
     }
 
     /**
-     * Tenant Admin login - queries master schema
+     * Tenant Admin login — queries master.pollify_tenant directly.
+     * Tenant admins are stored in pollify_tenant (not the users table).
      */
     @Transactional
     public LoginResponse loginTenantAdmin(LoginRequest request) {
         log.info("Tenant admin login attempt for email: {}", request.getEmail());
-        
+
         try {
-            // Set master context
             TenantContext.setTenantId(null);
-            
-            // Find user with TENANT_ADMIN role
-            User user = userRepository.findByEmailAndRole(request.getEmail(), UserRole.TENANT_ADMIN)
+
+            // Look up tenant by admin email
+            PollifyTenant tenant = tenantRepository.findByAdminEmail(request.getEmail())
                     .orElseThrow(() -> new BadCredentialsException("Invalid credentials"));
 
-            // Validate password
-            if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            // Validate password against stored hash
+            if (!passwordEncoder.matches(request.getPassword(), tenant.getAdminPasswordHash())) {
                 log.warn("Invalid password for tenant admin: {}", request.getEmail());
                 throw new BadCredentialsException("Invalid credentials");
             }
 
-            // Check if user is active
-            if (!user.getIsActive()) {
-                log.warn("User {} is not active", user.getEmail());
-                throw new BadCredentialsException("User account is not active");
-            }
-
-            // Get tenant information
-            PollifyTenant tenant = tenantRepository.findById(user.getTenantId())
-                    .orElseThrow(() -> new BadCredentialsException("Tenant not found"));
-
             // Check tenant status
             if (tenant.getTenantStatus() != PollifyTenant.TenantStatus.ACTIVE) {
                 log.warn("Tenant {} is not active", tenant.getTenantId());
-                throw new BadCredentialsException("Tenant account is not active");
+                throw new BadCredentialsException("Your school account is not active. Please contact support.");
             }
 
             // Generate JWT token
             String token = jwtTokenProvider.generateToken(
-                    user.getId().toString(),
-                    user.getEmail(),
+                    tenant.getTenantId(),
+                    tenant.getAdminEmail(),
                     tenant.getTenantId(),
                     UserRole.TENANT_ADMIN.name()
             );
 
-            log.info("Tenant admin login successful: {}", user.getEmail());
+            log.info("Tenant admin login successful: {}", request.getEmail());
 
             return new LoginResponse(
                     token,
-                    user.getId().toString(),
-                    user.getEmail(),
-                    user.getFirstName(),
-                    user.getLastName(),
+                    tenant.getTenantId(),
+                    tenant.getAdminEmail(),
+                    tenant.getAdminFirstName(),
+                    tenant.getAdminLastName(),
                     UserRole.TENANT_ADMIN.name(),
                     tenant.getTenantId(),
                     tenant.getUniversityName()
             );
+        } finally {
+            TenantContext.clear();
+        }
+    }
+
+    /**
+     * Unified login — auto-detects role (SUPER_ADMIN or TENANT_ADMIN).
+     * Frontend calls this single endpoint; no need to guess which endpoint to hit.
+     */
+    @Transactional
+    public LoginResponse login(LoginRequest request) {
+        TenantContext.setTenantId(null);
+        try {
+            // Try super admin first
+            try {
+                return loginSuperAdmin(request);
+            } catch (BadCredentialsException ignored) {
+                // Not a super admin — try tenant admin
+            }
+            // Try tenant admin
+            return loginTenantAdmin(request);
         } finally {
             TenantContext.clear();
         }
