@@ -17,6 +17,7 @@ public class SpaController {
     @GetMapping({
         "/login",
         "/register",
+        "/register/**",
         "/reset-password",
         "/dashboard",
         "/dashboard/**",
