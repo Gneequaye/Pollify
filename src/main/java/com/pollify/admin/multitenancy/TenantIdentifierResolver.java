@@ -25,10 +25,15 @@ public class TenantIdentifierResolver implements CurrentTenantIdentifierResolver
     }
 
     /**
-     * Sets the current tenant context for this thread
+     * Sets the current tenant context for this thread.
+     * Null or empty values are treated as master schema.
      */
     public static void setCurrentTenant(String tenantId) {
-        currentTenant.set(tenantId);
+        if (tenantId == null || tenantId.isBlank()) {
+            currentTenant.set(DEFAULT_TENANT);
+        } else {
+            currentTenant.set(tenantId);
+        }
     }
 
     /**
