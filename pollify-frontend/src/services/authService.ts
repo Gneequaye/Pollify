@@ -18,33 +18,17 @@ interface RegisterRequest {
 }
 
 class AuthService {
-  // Login - tries super admin first, then tenant admin
+  /**
+   * Unified login — backend auto-detects SUPER_ADMIN or TENANT_ADMIN.
+   */
   async login(email: string, password: string): Promise<LoginResponse> {
-    const credentials: LoginRequest = { email, password };
-
-    try {
-      // Try super admin login first
-      return await apiRequest<LoginResponse>('/auth/super/login', {
-        method: 'POST',
-        body: JSON.stringify(credentials),
-      });
-    } catch (superAdminError: any) {
-      // If super admin fails with 401/403, try tenant admin
-      if (superAdminError.status === 401 || superAdminError.status === 403) {
-        try {
-          return await apiRequest<LoginResponse>('/auth/admin/login', {
-            method: 'POST',
-            body: JSON.stringify(credentials),
-          });
-        } catch (tenantAdminError: any) {
-          throw new Error('Invalid email or password');
-        }
-      }
-      throw superAdminError;
-    }
+    return apiRequest<LoginResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
   }
 
-  // Super Admin Login (explicit)
+  /** Explicit super admin login */
   async superAdminLogin(email: string, password: string): Promise<LoginResponse> {
     return apiRequest<LoginResponse>('/auth/super/login', {
       method: 'POST',
@@ -52,35 +36,11 @@ class AuthService {
     });
   }
 
-  // Tenant Admin Login (explicit)
+  /** Explicit tenant admin login */
   async tenantAdminLogin(email: string, password: string): Promise<LoginResponse> {
     return apiRequest<LoginResponse>('/auth/admin/login', {
       method: 'POST',
       body: JSON.stringify({ email, password }),
-    });
-  }
-
-  // Register new tenant admin
-  async register(data: RegisterRequest): Promise<any> {
-    return apiRequest('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  }
-
-  // Validate invitation token
-  async validateInvitation(token: string): Promise<any> {
-    return apiRequest('/invitations/validate', {
-      method: 'POST',
-      body: JSON.stringify({ invitationToken: token }),
-    });
-  }
-
-  // Complete onboarding
-  async completeOnboarding(data: any): Promise<any> {
-    return apiRequest('/invitations/complete-onboarding', {
-      method: 'POST',
-      body: JSON.stringify(data),
     });
   }
 }
