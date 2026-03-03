@@ -20,7 +20,7 @@ import java.util.UUID;
 public class PollifyTenant {
 
     @Id
-    @Column(name = "tenant_id", length = 12)
+    @Column(name = "tenant_id", length = 36)
     private String tenantId;
 
     @Column(name = "tenant_uuid", nullable = false, unique = true)
