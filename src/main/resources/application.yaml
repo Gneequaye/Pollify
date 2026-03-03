@@ -39,7 +39,31 @@ spring:
     validate-on-migrate: false
     clean-disabled: false
 
+  thymeleaf:
+    check-template-location: true
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    cache: false   # set to true in production
+
+  mail:
+    host: ${SMTP_HOST:sandbox.smtp.mailtrap.io}
+    port: ${SMTP_PORT:2525}
+    username: ${SMTP_USERNAME:57241fd50c71a4}
+    password: ${SMTP_PASSWORD:3069f80be9c9e3}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+        debug: false
+
 pollify:
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:8080}
   tenant:
     auto-sync-migrations: true
   super-admin:
