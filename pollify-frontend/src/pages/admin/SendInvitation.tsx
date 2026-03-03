@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -15,7 +16,6 @@ import {
 } from '@/components/ui/form';
 import {
   IconMail,
-  IconBuilding,
   IconCircleCheckFilled,
   IconLoader,
   IconSend,
@@ -23,6 +23,8 @@ import {
   IconArrowLeft,
 } from "@tabler/icons-react";
 import { Separator } from '@/components/ui/separator';
+import { invitationService } from '@/services/invitationService';
+import { ApiError } from '@/lib/api';
 
 const panel = "w-full bg-white dark:bg-zinc-900/70 border border-zinc-100 dark:border-zinc-800 rounded-xl shadow-sm backdrop-blur-xl";
 
@@ -36,9 +38,14 @@ const sendInvitationSchema = z.object({
     .string()
     .email('Please enter a valid email address')
     .refine(
-      (val) => val.includes('.edu') || val.includes('.ac.'),
-      'Please use an official institutional email address (e.g., .edu or .ac.)'
+      (v) => v.includes('.edu') || v.includes('.ac.'),
+      'Must be an institutional email (.edu or .ac.)'
     ),
+  invitationCode: z
+    .string()
+    .min(4, 'Invitation code must be 4–20 characters')
+    .max(20, 'Invitation code must be under 20 characters')
+    .regex(/^[A-Z0-9-]+$/, 'Uppercase letters, numbers, and hyphens only (e.g. INV-001)'),
 });
 
 type SendInvitationForm = z.infer<typeof sendInvitationSchema>;
@@ -48,23 +55,34 @@ export function SendInvitation() {
 
   const form = useForm<SendInvitationForm>({
     resolver: zodResolver(sendInvitationSchema),
-    defaultValues: { universityName: '', universityEmail: '' },
+    defaultValues: {
+      universityName: '',
+      universityEmail: '',
+      invitationCode: '',
+    },
   });
 
   const { isSubmitting } = form.formState;
 
   const onSubmit = async (data: SendInvitationForm) => {
-    await new Promise((res) => setTimeout(res, 1200));
-    navigate('/dashboard/admin/invitations/success', {
-      state: {
-        universityName: data.universityName,
-        universityEmail: data.universityEmail,
-        invitationId: `INV-${String(Math.floor(Math.random() * 900) + 100).padStart(3, '0')}`,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
-          weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
-        }),
-      },
-    });
+    try {
+      const response = await invitationService.sendInvitation(data);
+      navigate('/dashboard/admin/invitations/success', {
+        state: {
+          universityName: response.universityName,
+          universityEmail: response.universityEmail,
+          invitationToken: response.invitationToken,
+          invitationCode: response.invitationCode,
+          invitationUrl: response.invitationUrl,
+          expiresAt: new Date(response.expiresAt).toLocaleDateString('en-US', {
+            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+          }),
+        },
+      });
+    } catch (err) {
+      const message = err instanceof ApiError ? err.message : 'Failed to send invitation. Please try again.';
+      toast.error(message);
+    }
   };
 
   return (
@@ -84,7 +102,6 @@ export function SendInvitation() {
 
       {/* Main panel */}
       <div className={`${panel} p-6`}>
-        {/* Panel header */}
         <div className="mb-6">
           <h1 className="text-xl font-bold">Send Invitation</h1>
           <p className="text-sm text-muted-foreground mt-0.5">
@@ -100,26 +117,13 @@ export function SendInvitation() {
               {/* LEFT: Form fields */}
               <div className="lg:col-span-2 flex flex-col gap-5">
 
-                {/* Section label */}
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="size-6 rounded-full bg-primary text-primary-foreground text-xs font-bold flex items-center justify-center">1</span>
-                    <h2 className="text-base font-semibold">Institution Details</h2>
-                  </div>
-                  <p className="text-sm text-muted-foreground ml-8">
-                    Provide the official name and contact email for the institution you want to invite.
-                  </p>
-                </div>
-
                 {/* School Name */}
                 <FormField
                   control={form.control}
                   name="universityName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium">
-                        School / University Name
-                      </FormLabel>
+                      <FormLabel className="text-sm font-medium">School / University Name</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="e.g., University of Ghana"
@@ -127,9 +131,6 @@ export function SendInvitation() {
                           {...field}
                         />
                       </FormControl>
-                      <FormDescription className="text-xs">
-                        The full official name of the institution
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -141,9 +142,7 @@ export function SendInvitation() {
                   name="universityEmail"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-sm font-medium">
-                        Official Contact Email
-                      </FormLabel>
+                      <FormLabel className="text-sm font-medium">Official Contact Email</FormLabel>
                       <FormControl>
                         <Input
                           type="email"
@@ -153,7 +152,7 @@ export function SendInvitation() {
                         />
                       </FormControl>
                       <FormDescription className="text-xs">
-                        Must be an institutional email ending in{' '}
+                        Must end in{' '}
                         <code className="bg-zinc-100 dark:bg-zinc-800 px-1 py-0.5 rounded text-xs">.edu</code>
                         {' '}or{' '}
                         <code className="bg-zinc-100 dark:bg-zinc-800 px-1 py-0.5 rounded text-xs">.ac.</code>
@@ -163,13 +162,32 @@ export function SendInvitation() {
                   )}
                 />
 
-                {/* Actions */}
+                {/* Invitation Code */}
+                <FormField
+                  control={form.control}
+                  name="invitationCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-medium">Invitation Code</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="e.g., KNUST2024"
+                          className="h-10 bg-zinc-50 dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 font-mono"
+                          {...field}
+                          onChange={(e) => field.onChange(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, ''))}
+                        />
+                      </FormControl>
+                      <FormDescription className="text-xs">
+                        4–20 characters. Uppercase letters, numbers, and hyphens (e.g. <code className="bg-zinc-100 dark:bg-zinc-800 px-1 py-0.5 rounded text-xs">INV-001</code>).
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Submit */}
                 <div className="flex justify-end pt-2">
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="gap-2 px-6"
-                  >
+                  <Button type="submit" disabled={isSubmitting} className="gap-2 px-6">
                     {isSubmitting ? (
                       <><IconLoader className="size-4 animate-spin" /> Sending Invitation…</>
                     ) : (
@@ -181,8 +199,6 @@ export function SendInvitation() {
 
               {/* RIGHT: Info panel */}
               <div className="lg:col-span-1 flex flex-col gap-4">
-
-                {/* What happens next */}
                 <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-5 border border-zinc-100 dark:border-zinc-800">
                   <div className="flex items-center gap-2 mb-3">
                     <IconMail className="size-4 text-muted-foreground" />
@@ -191,8 +207,8 @@ export function SendInvitation() {
                   <div className="flex flex-col gap-3">
                     {[
                       'An invitation email is delivered to the contact address',
-                      'The school representative clicks the "Accept Invitation" link',
-                      'They set up their admin account and configure their school type',
+                      'The school clicks the "Accept Invitation" link in the email',
+                      'They complete onboarding and set up their admin account',
                       'Their isolated school environment is automatically provisioned',
                     ].map((step, i) => (
                       <div key={i} className="flex items-start gap-2.5">
@@ -205,14 +221,13 @@ export function SendInvitation() {
                   </div>
                 </div>
 
-                {/* Tips */}
                 <div className="bg-zinc-50 dark:bg-zinc-800/50 rounded-xl p-5 border border-zinc-100 dark:border-zinc-800">
                   <h3 className="text-sm font-semibold mb-3">Good to know</h3>
                   <div className="space-y-2.5">
                     {[
                       'Use the official registrar or admin email address',
-                      'The invitation is valid for 7 days before it expires',
-                      'You can resend or revoke from the All Invitations page',
+                      'The invitation link is valid for 7 days',
+                      'The invitation code uniquely identifies the school',
                     ].map((tip, i) => (
                       <div key={i} className="flex items-start gap-2">
                         <IconCircleCheckFilled className="size-3.5 text-emerald-500 mt-0.5 shrink-0" />
@@ -222,11 +237,10 @@ export function SendInvitation() {
                   </div>
                 </div>
 
-                {/* Expiry warning */}
                 <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 px-4 py-3.5">
                   <IconAlertCircle className="size-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
                   <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed">
-                    The invitation link expires in <strong>7 days</strong>. If the school doesn't respond in time, you can resend it from the All Invitations page.
+                    The invitation link expires in <strong>7 days</strong>. If the school doesn't respond in time, contact your system administrator.
                   </p>
                 </div>
               </div>
